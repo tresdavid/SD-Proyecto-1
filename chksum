@@ -1,0 +1,108 @@
+#!/usr/bin/env python
+"""
+Parallel Hello World
+"""
+
+from mpi4py import MPI
+import sys
+import os
+import numpy as np
+
+comm = MPI.COMM_WORLD
+size = MPI.COMM_WORLD.Get_size()
+rank = MPI.COMM_WORLD.Get_rank()
+name = MPI.Get_processor_name()
+req = MPI.Request
+file_name = ""
+
+#Este metodo calcula la linea de inicio para cada nodo
+def set_file_begin(file_name,rank,size):
+        desc = open(file_name,'r')
+        count_lines = len(desc.readlines())
+        desc.close()
+
+        print "Cantidad de logs: ", count_lines
+
+        wload = count_lines / size
+        begin = rank * wload
+        rest = count_lines % size
+
+        return [begin,wload,rest]
+
+
+def find_warns():
+
+        with open(file_name, 'r+') as file_d:
+                walk = 0
+
+                #Saltar lineas que no le correspondan al nodo
+                while walk < begin:
+                        line = file_d.readline()
+                        walk = walk + 1
+
+                #Leer lineas
+
+                warn_count = 0
+                while walk < end:
+
+                        line = file_d.readline()
+
+                        if line.split()[2] == "WARN":
+                                warn_count += 1
+
+                        walk += 1
+
+                #Si hubo resto, que el ultimo nodo se encargue de procesarla
+                print protocols
+
+                if rank == size-1 and rest > 0:
+                        line = file_d.readline()
+                        print "Hubo resto"
+                        if line.split()[2] == "WARN":
+                                warn_count += 1
+
+                print "Proceso: ",rank,", Cantidad de warns: ",warn_count
+
+
+
+                return warn_count
+
+
+def send_or_recieve_results(warns_count):
+
+        value = np.array(warns_count,'d')
+        value_sum  = np.array(0.0,'d')
+        comm.Reduce(value, value_sum, op=MPI.SUM, root=0)
+
+        if(rank == 0):
+            print "---- Cantidad total de warnings despues del reduce: ",value_sum
+
+
+"""
+if rank == 0:
+    f = open("//home//gmode.15//grupo_7//examples//hello_world_py//logs//audit.log.2018-10-02", "r")
+    logs = []
+    logs = f.readlines()
+    f.close()
+    s = 0
+    for x in logs:
+        if x.split()[2] == "WARN":
+            s = s + 1
+    print("----- Total de WARN ----")
+    print(s)
+    print("------------------------")
+    cont = len(logs)/size
+    distribucion = []
+    for i in range(0, len(logs), cont):
+        distribucion.append(logs[i:i+cont])
+"""
+if __name__ == '__main__':
+
+        file_name = ".//logs//audit.log.2018-10-02"
+
+        begin,wload,rest = set_file_begin(file_name,rank,size)
+        end = begin + wload
+
+        print "---- Proceso: ",rank,", inicio de archivo: ",begin,", carga de trabajo: ",wload,", fin: ",end,", resto: ",rest," ----"
+        warns_count = find_warns()
+        send_or_recieve_results(warns_count)
