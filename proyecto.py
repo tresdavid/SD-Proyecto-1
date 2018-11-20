@@ -67,25 +67,24 @@ def find_warns():
 				if(len(line.split()) < 10):
 					print "Peligro: ",line.split()
 
-				if(line.split()[9] != "protocol=soap;"):
-					cadena = line.split()[4]
+				cadena = line.split()[4]
 
-					oip = cadena.split(";")
-					#print oip
-					oip1 = oip[1].replace("oip=","")
-					#oip1 = oip[1][:-2]
+				oip = cadena.split(";")
+				oip1 = oip[1].replace("oip=","")
+				try:
+					response = reader.country(oip1) #Hacer esto al tener la ip
+		#			print("{}: {}".format(oip1, response.country.name)) #El segundo parametro te da el nombre del pais
 
-					try:
-						response = reader.country(oip1) #Hacer esto al tener la ip
-			#			print("{}: {}".format(oip1, response.country.name)) #El segundo parametro te da el nombre del pais
+					#Agregar el pais al dictionary
+					add_country_count(dictionary,response.country.name)
 
-						#Agregar el pais al dictionary
-						add_country_count(dictionary,response.country.name)
-
-					except AddressNotFoundError:
-            					print("{}: {}".format(oip1, 'NOOOOOOOOOOOOO'))
-#					except:
-#						print "Otro error, seguro en el dictionary"
+				except AddressNotFoundError:
+            				if oip1 == "192.168.15.15":
+						add_country_count(dictionary,"Venezuela")
+					else:
+						print("{}: {}".format(oip1, 'No se tiene registro de esta ip'))
+#				except:
+#					print "Otro error, seguro en el dictionary"
 
 			walk += 1
 
